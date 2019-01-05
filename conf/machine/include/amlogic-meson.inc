@@ -6,3 +6,5 @@ SERIAL_CONSOLE ?= "115200 ttyAML0"
 UBOOT_CONSOLE ?= "console=ttyAML0,115200"
 
 MACHINE_FEATURES = "alsa screen"
+
+UBOOT_BOOTDEV  ?= "0"

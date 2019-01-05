@@ -70,7 +70,7 @@ UBOOT_DELAY ?= ""
 UBOOT_AUTOBOOT ?= "3"
 UBOOT_VIDEO ?= ""
 UBOOT_XTRA_CMDLINE ?= ""
-UBOOT_MULTI_BOOT = "1"
+UBOOT_MULTI_BOOT ?= "1"
 
 python create_uboot_boot_txt() {
     if d.getVar("USE_BOOTSCR") != "1":

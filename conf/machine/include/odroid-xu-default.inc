@@ -1,7 +1,7 @@
 # Odroid XU default BSP
 
-include conf/machine/include/samsung-exynos.inc
-include conf/machine/include/odroid-default-settings.inc
+require conf/machine/include/samsung-exynos.inc
+require conf/machine/include/odroid-arm-defaults.inc
 
 DEFAULTTUNE = "cortexa15thf-neon-vfpv4"
 include conf/machine/include/tune-cortexa15.inc

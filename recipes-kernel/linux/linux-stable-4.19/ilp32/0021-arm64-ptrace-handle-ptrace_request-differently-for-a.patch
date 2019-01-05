@@ -1,0 +1,74 @@
+From 57e59ea354bc0680f0499ee312e2afd6b695dbb1 Mon Sep 17 00:00:00 2001
+From: Yury Norov <ynorov@caviumnetworks.com>
+Date: Wed, 16 May 2018 11:19:06 +0300
+Subject: [PATCH 21/24] arm64: ptrace: handle ptrace_request differently for
+ aarch32 and ilp32
+
+ILP32 has context-related structures different from both aarch32 and
+aarch64/lp64. In this patch compat_arch_ptrace() renamed to
+compat_a32_ptrace(), and compat_arch_ptrace() only makes choice between
+compat_a32_ptrace() and new compat_ilp32_ptrace() handler.
+
+compat_ilp32_ptrace() calls generic compat_ptrace_request() for all
+requests except PTRACE_GETSIGMASK and PTRACE_SETSIGMASK, which need
+special handling.
+
+Signed-off-by: Yury Norov <ynorov@caviumnetworks.com>
+Signed-off-by: Bamvor Jian Zhang <bamv2005@gmail.com>
+---
+ arch/arm64/kernel/ptrace.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/kernel/ptrace.c b/arch/arm64/kernel/ptrace.c
+index a5fe4e5..e37c3b1 100644
+--- a/arch/arm64/kernel/ptrace.c
++++ b/arch/arm64/kernel/ptrace.c
+@@ -1045,9 +1045,11 @@ static const struct user_regset_view user_aarch64_view = {
+ 	.regsets = aarch64_regsets, .n = ARRAY_SIZE(aarch64_regsets)
+ };
+ 
+-#ifdef CONFIG_AARCH32_EL0
++#ifdef CONFIG_COMPAT
+ #include <linux/compat.h>
++#endif
+ 
++#ifdef CONFIG_AARCH32_EL0
+ enum compat_regset {
+ 	REGSET_COMPAT_GPR,
+ 	REGSET_COMPAT_VFP,
+@@ -1506,7 +1508,7 @@ static int compat_ptrace_sethbpregs(struct task_struct *tsk, compat_long_t num,
+ }
+ #endif	/* CONFIG_HAVE_HW_BREAKPOINT */
+ 
+-long compat_arch_ptrace(struct task_struct *child, compat_long_t request,
++static long compat_a32_ptrace(struct task_struct *child, compat_long_t request,
+ 			compat_ulong_t caddr, compat_ulong_t cdata)
+ {
+ 	unsigned long addr = caddr;
+@@ -1583,8 +1585,23 @@ long compat_arch_ptrace(struct task_struct *child, compat_long_t request,
+ 
+ 	return ret;
+ }
++
++#else
++#define  compat_a32_ptrace(child, request, caddr, cdata)	(0)
+ #endif /* CONFIG_AARCH32_EL0 */
+ 
++#ifdef CONFIG_COMPAT
++long compat_arch_ptrace(struct task_struct *child, compat_long_t request,
++			compat_ulong_t caddr, compat_ulong_t cdata)
++{
++	if (is_a32_compat_task())
++		return compat_a32_ptrace(child, request, caddr, cdata);
++
++	/* ILP32 */
++	return compat_ptrace_request(child, request, caddr, cdata);
++}
++#endif
++
+ const struct user_regset_view *task_user_regset_view(struct task_struct *task)
+ {
+ #ifdef CONFIG_AARCH32_EL0
+-- 
+2.7.4
+
