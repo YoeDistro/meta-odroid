@@ -29,6 +29,9 @@ MACHINE_FEATURES_append = " serial usbgadget usbhost vfat ext2"
 
 MACHINE_FEATURES_BACKFILL_CONSIDERED = "rtc"
 
-IMAGE_INSTALL_append = " kernel-image kernel-modules"
+IMAGE_INSTALL_append = " dosfstools mtools kernel-image kernel-modules"
+
+KERNEL_EXTRA_FEATURES ?= "cfg/fs/vfat.scc"
+KERNEL_FEATURES_append = " ${KERNEL_EXTRA_FEATURES}"
 
 IMAGE_FSTYPES ?= " ext4 wic wic.xz"

@@ -1,8 +1,8 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${PV}:"
 
-LINUX_VERSION ?= "4.19.14"
-KBRANCH ?= "linux-4.19.y"
-SRCREV ?= "f630d3cc771e845af8ab9ac7a68746596ea0ec7c"
+LINUX_VERSION ?= "4.20.0"
+KBRANCH ?= "linux-4.20.y"
+SRCREV ?= "8fe28cb58bcb235034b64cbbb7550a8a43fd88be"
 
 require linux-stable.inc
 
@@ -12,8 +12,6 @@ SRC_URI_append = " git://git.yoctoproject.org/yocto-kernel-cache;type=kmeta;name
 SRC_URI_append = " file://odroid-kmeta;type=kmeta;name=odroid-kmeta;destsuffix=odroid-kmeta"
 
 SRC_URI_append = " file://odroid/odroid.scc"
-SRC_URI_append = " file://meson/meson64.scc"
-SRC_URI_append = " file://ilp32/arm64_ilp32.scc"
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=bbea815ee2795b2f4230826c0c6b8814"
 

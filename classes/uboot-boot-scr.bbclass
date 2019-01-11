@@ -50,8 +50,8 @@ UBOOT_ENV_CONFIG ?= "${B}/${UBOOT_ENV}.txt"
 
 UBOOT_LOADADDRESS ?= ""
 UBOOT_FDT_LOADADDR ?= ""
-UBOOT_ROOTARGS ?= "root=/dev/${roottype}${rootpart} rw rootwait"
 UBOOT_BOOTARGS ?= "${console} ${root} rw rootwait ${video} ${extra_cmdline}"
+UBOOT_ROOT ?= "mmcblk1p2 rw rootwait"
 UBOOT_KERNEL_NAME ?= ""
 UBOOT_INITRD_NAME ?= ""
 UBOOT_INITRD_ADDR ?= "-"
@@ -106,7 +106,7 @@ python create_uboot_boot_txt() {
                 cfgfile.write('setenv video \"%s\" \n' % video)
 
             extra_cmdline = localdata.getVar('UBOOT_XTRA_CMDLINE')
-            if video:
+            if extra_cmdline:
                 cfgfile.write('setenv  extra_cmdline \"%s\" \n' % extra_cmdline)
 
             console = localdata.getVar('UBOOT_CONSOLE')
@@ -114,29 +114,13 @@ python create_uboot_boot_txt() {
                 cfgfile.write('setenv console \"%s\" \n' % console) 
            
             loadcmd = localdata.getVar('UBOOT_LOAD_CMD')
-            cfgfile.write('setenv loadcmd \"%s\" \n' % loadcmd) 
 
             bootdev = localdata.getVar('UBOOT_BOOTDEV')
-            if bootdev:
-                cfgfile.write('setenv bootdev %s\n' % bootdev )
-
             boottype = localdata.getVar('UBOOT_BOOTTYPE')
-            cfgfile.write('setenv boottype %s\n' % boottype )
-
-            roottype = localdata.getVar('UBOOT_ROOTTYPE')
-            cfgfile.write('setenv roottype %s\n' % roottype )
-
             bootpart = localdata.getVar('UBOOT_BOOTPART')
-            if bootpart:
-                cfgfile.write('setenv bootpart %s\n' % bootpart )
 
             rootdev = localdata.getVar('UBOOT_ROOTDEV')
-            if rootdev:
-                cfgfile.write('setenv rootdev %s\n' % rootdev)
-
             rootpart = localdata.getVar('UBOOT_ROOTPART')
-            if rootpart :
-                cfgfile.write('setenv rootpart %s\n' % rootpart )
 
             # initrd
             initrdaddr = localdata.getVar('UBOOT_INITRD_ADDR')
@@ -146,51 +130,35 @@ python create_uboot_boot_txt() {
                 cfgfile.write('setenv initrdname  \"%s\"\n' % initrd) 
 
             kerneladdr = localdata.getVar('UBOOT_LOADADDRESS')
-            cfgfile.write('setenv kerneladdr \"%s\"\n' % kerneladdr)
+            kernelname = localdata.getVar('UBOOT_KERNEL_NAME')
 
             fdtaddr = localdata.getVar('UBOOT_FDT_LOADADDR')
-            cfgfile.write('setenv fdtaddr %s\n' % fdtaddr)
-
             fdtfile = os.path.basename(localdata.getVar('KERNEL_DEVICETREE'))
-            cfgfile.write('setenv fdtfile \"%s\"\n' % fdtfile)
-
 
             imgbootcmd = localdata.getVar('UBOOT_BOOT_CMD')
-            cfgfile.write('setenv imgbootcmd \"%s\" \n' % imgbootcmd) 
-
-            kernelname = localdata.getVar('UBOOT_KERNEL_NAME')
-            cfgfile.write('setenv kernelname %s\n' % kernelname)
-
             bootprefix = localdata.getVar('BOOT_PREFIX')
-            cfgfile.write('setenv bootprefix %s\n' % bootprefix)
 
             uboot_extra_envs = (d.getVar('UBOOT_EXTRA_ENV') or "").split("#")
             if uboot_extra_envs:
                 for e in uboot_extra_envs:
                     cfgfile.write('%s\n' % e)
 
-            rootargs = localdata.getVar('UBOOT_ROOTARGS')
-            if rootargs:
-                cfgfile.write('setenv root \" %s \"\n' % rootargs)
-
+            root = localdata.getVar('UBOOT_ROOT')
+            cfgfile.write('setenv root \"root=/dev/%s\"\n' % root)
             bootargs = localdata.getVar('UBOOT_BOOTARGS')
             if bootargs:
                 cfgfile.write('setenv bootargs \" %s \"\n' % bootargs)
-
 
             if initrd:
                 cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, initrdaddr, bootprefix, initrdname))
 
             if d.getVar("UBOOT_MULTI_BOOT") == "1":
-                cfgfile.write('setenv root \" root=/dev/%s%s rw rootwait\"\n' % ("mmcblk0p", 2))
-                cfgfile.write("if %s %s %s:%s %s %s%s; then\n" % (loadcmd, boottype, bootdev, 0, kerneladdr, bootprefix, kernelname))
-                cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, fdtaddr,bootprefix, fdtfile))
-                cfgfile.write("fi\n")
+                for p in range(0,3):
+                    for d in range(1,3):
+                        cfgfile.write("if %s %s %s:%s %s %s%s; then\n" % (loadcmd, boottype, p, d, kerneladdr, bootprefix, kernelname))
+                        cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, p, d, fdtaddr, bootprefix, fdtfile))
+                        cfgfile.write("fi\n")
 
-                cfgfile.write("if %s %s %s:%s %s %s%s; then\n" % (loadcmd, boottype, bootdev, bootpart, kerneladdr, bootprefix, kernelname))
-                cfgfile.write('setenv root \" root=/dev/%s%s rw rootwait\"\n' % ("mmcblk1p", 2))
-                cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, fdtaddr,bootprefix, fdtfile))
-                cfgfile.write("fi\n")
             else:
                 cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, fdtaddr,bootprefix, fdtfile))
                 cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, kerneladdr, bootprefix, kernelname))
