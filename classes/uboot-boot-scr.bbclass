@@ -50,11 +50,15 @@ UBOOT_ENV_CONFIG ?= "${B}/${UBOOT_ENV}.txt"
 
 UBOOT_LOADADDRESS ?= ""
 UBOOT_FDT_LOADADDR ?= ""
-UBOOT_BOOTARGS ?= "${console} ${root} rw rootwait ${video} ${extra_cmdline}"
-UBOOT_ROOT ?= "mmcblk1p2 rw rootwait"
+UBOOT_BOOTARGS ?= "${console} ${root} ${video} ${extra_cmdline}"
+UBOOT_BOOTTYPE ?= "mmc"
 UBOOT_KERNEL_NAME ?= ""
 UBOOT_INITRD_NAME ?= ""
 UBOOT_INITRD_ADDR ?= "-"
+UBOOT_ROOT_ARGS ?= "rw rootwait"
+UBOOT_NFS_ARGS ?= ",tcp,v3,wsize=8192,rsize=8192"
+UBOOT_ROOT_mmc ?= "mmcblk1p2 ${UBOOT_ROOT_ARGS}"
+UBOOT_ROOT_nfs ?= "nfs ${UBOOT_ROOT_ARGS}"
 
 UBOOT_CONSOLE ?= ""
 UBOOT_BOOTDEV  ?= "0"
@@ -70,7 +74,22 @@ UBOOT_DELAY ?= ""
 UBOOT_AUTOBOOT ?= "3"
 UBOOT_VIDEO ?= ""
 UBOOT_XTRA_CMDLINE ?= ""
-UBOOT_MULTI_BOOT ?= "1"
+UBOOT_MULTI_BOOT ?= "0"
+
+UBOOT_IPADDR ?=""
+UBOOT_SERVERIP ?=""
+UBOOT_SERVERIP_NFS ?="${UBOOT_SERVERIP}"
+UBOOT_GATEWATIP ?= ""
+UBOOT_NETMASK ?=""
+UBOOT_ETHADDR ?= ""
+UBOOT_HOSTNAME ?="${MACHINE}"
+UBOOT_ROOTPATH ?= "${NFS_ROOT}${MACHINE}"
+UBOOT_USB_NET ?= "0"
+UBOOT_BOOT_TYPE ?= ""
+UBOOT_NETBOOT ?= ""
+UBOOT_BOOTPATH ?= "${MACHINE}"
+
+USING_NFS = "${@bb.utils.contains_any('UBOOT_BOOT_TYPE', 'nfs', '1', '', d)}" 
 
 python create_uboot_boot_txt() {
     if d.getVar("USE_BOOTSCR") != "1":
@@ -84,6 +103,12 @@ python create_uboot_boot_txt() {
         bb.fatal('Unable to read UBOOT_ENV_CONFIG')
 
     localdata = bb.data.createCopy(d)
+
+    if localdata.getVar("USING_NFS"):
+        localdata.setVar('UBOOT_ROOT', localdata.getVar('UBOOT_ROOT_nfs'))
+    else:
+        localdata.setVar('UBOOT_ROOT', localdata.getVar('UBOOT_ROOT_mmc'))
+
 
     try:
         with open(cfile, 'w') as cfgfile:
@@ -112,15 +137,45 @@ python create_uboot_boot_txt() {
             console = localdata.getVar('UBOOT_CONSOLE')
             if console:
                 cfgfile.write('setenv console \"%s\" \n' % console) 
-           
+
+            root = localdata.getVar('UBOOT_ROOT')
+            cfgfile.write('setenv root \"root=/dev/%s\"\n' % root)
+
+            bootargs = localdata.getVar('UBOOT_BOOTARGS')
+
+            netboot = localdata.getVar('UBOOT_NETBOOT')
+
+            if root.startswith("nfs") or netboot:
+                ipaddr = localdata.getVar('UBOOT_IPADDR')
+                serverip = localdata.getVar('UBOOT_SERVERIP')
+                nfsserverip = localdata.getVar('UBOOT_SERVERIP_NFS')
+                gatewayip = localdata.getVar('UBOOT_GATEWATIP')
+                netmask = localdata.getVar('UBOOT_NETMASK')
+                hostname = localdata.getVar('UBOOT_HOSTNAME')
+                ethaddr  = localdata.getVar('UBOOT_ETHADDR')
+
+                cfgfile.write('setenv ipaddr \"%s\"\n' % ipaddr )
+                cfgfile.write('setenv gatewayip \"%s\"\n' % gatewayip )
+                cfgfile.write('setenv serverip \"%s\"\n' % serverip )
+                cfgfile.write('setenv netmask \"%s\"\n' % netmask )
+
+                if d.getVar("UBOOT_USB_NET") == "1":
+                    cfgfile.write('\nset usbethaddr %s\n' % ethaddr)
+                    cfgfile.write('usb start\n\n')
+
+            if root.startswith("nfs"):
+                rootpath = localdata.getVar('UBOOT_ROOTPATH')
+                nfsargs  = localdata.getVar('UBOOT_NFS_ARGS')
+                bootargs += (" nfsroot=%s:%s%s ip=%s:%s:%s:%s:%s::off" % \
+                            (nfsserverip, rootpath, nfsargs, ipaddr, nfsserverip, gatewayip, netmask, hostname))
+
+            cfgfile.write('setenv bootargs \" %s \"\n' % bootargs)
+
             loadcmd = localdata.getVar('UBOOT_LOAD_CMD')
 
             bootdev = localdata.getVar('UBOOT_BOOTDEV')
             boottype = localdata.getVar('UBOOT_BOOTTYPE')
             bootpart = localdata.getVar('UBOOT_BOOTPART')
-
-            rootdev = localdata.getVar('UBOOT_ROOTDEV')
-            rootpart = localdata.getVar('UBOOT_ROOTPART')
 
             # initrd
             initrdaddr = localdata.getVar('UBOOT_INITRD_ADDR')
@@ -143,25 +198,28 @@ python create_uboot_boot_txt() {
                 for e in uboot_extra_envs:
                     cfgfile.write('%s\n' % e)
 
-            root = localdata.getVar('UBOOT_ROOT')
-            cfgfile.write('setenv root \"root=/dev/%s\"\n' % root)
-            bootargs = localdata.getVar('UBOOT_BOOTARGS')
-            if bootargs:
-                cfgfile.write('setenv bootargs \" %s \"\n' % bootargs)
+            if netboot:
+                bootpath = localdata.getVar('UBOOT_BOOTPATH')
+                cfgfile.write("%s %s %s/%s\n" % (netboot, kerneladdr, bootpath, kernelname))
+                cfgfile.write("%s %s %s/%s\n" % (netboot, fdtaddr, bootpath, fdtfile))
+                if initrd:
+                    cfgfile.write("%s %s %s%s\n" % (netboot, initrdaddr, bootpath, initrdname))
 
-            if initrd:
-                cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, initrdaddr, bootprefix, initrdname))
+            else: # ! netboot
+                if d.getVar("UBOOT_MULTI_BOOT") == "1" :
+                    for p in range(0,3):
+                        for d in range(1,3):
+                            cfgfile.write("if %s %s %s:%s %s %s%s; then\n" % (loadcmd, boottype, p, d, kerneladdr, bootprefix, kernelname))
+                            cfgfile.write("    %s %s %s:%s %s %s%s\n" % (loadcmd, boottype, p, d, fdtaddr, bootprefix, fdtfile))
+                            cfgfile.write("fi\n")
 
-            if d.getVar("UBOOT_MULTI_BOOT") == "1":
-                for p in range(0,3):
-                    for d in range(1,3):
-                        cfgfile.write("if %s %s %s:%s %s %s%s; then\n" % (loadcmd, boottype, p, d, kerneladdr, bootprefix, kernelname))
-                        cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, p, d, fdtaddr, bootprefix, fdtfile))
-                        cfgfile.write("fi\n")
+                else:
+                    cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, fdtaddr,bootprefix, fdtfile))
+                    cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, kerneladdr, bootprefix, kernelname))
 
-            else:
-                cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, fdtaddr,bootprefix, fdtfile))
-                cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, kerneladdr, bootprefix, kernelname))
+                if initrd:
+                    cfgfile.write("%s %s %s:%s %s %s%s\n" % (loadcmd, boottype, bootdev, bootpart, initrdaddr, bootprefix, initrdname))
+
 
             cfgfile.write("%s %s %s %s\n" % (imgbootcmd, kerneladdr, initrdaddr, fdtaddr))
 

@@ -1,8 +1,8 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${PV}:"
 
-LINUX_VERSION ?= "4.19.14"
+LINUX_VERSION ?= "4.19.16"
 KBRANCH ?= "linux-4.19.y"
-SRCREV ?= "f630d3cc771e845af8ab9ac7a68746596ea0ec7c"
+SRCREV ?= "9c5931b65a7b58ddeaf1530f1c4b515ba8640f8d"
 
 require linux-stable.inc
 
@@ -13,7 +13,7 @@ SRC_URI_append = " file://odroid-kmeta;type=kmeta;name=odroid-kmeta;destsuffix=o
 
 SRC_URI_append = " file://odroid/odroid.scc"
 SRC_URI_append = " file://meson/meson64.scc"
-SRC_URI_append = " file://ilp32/arm64_ilp32.scc"
+SRC_URI_append = " ${@bb.utils.contains("MACHINE_FEATURES", "ilp32", "file://ilp32/arm64_ilp32.scc", "",d)}"
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=bbea815ee2795b2f4230826c0c6b8814"
 
