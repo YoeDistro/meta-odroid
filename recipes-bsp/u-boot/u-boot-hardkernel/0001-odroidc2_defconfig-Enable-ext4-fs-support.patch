@@ -1,0 +1,22 @@
+From d4db8df660e278631d954c330e91e60290820b46 Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Mon, 28 Jan 2019 10:42:34 -0800
+Subject: [PATCH] odroidc2_defconfig: Enable ext4 fs support
+
+Signed-off-by: Khem Raj <raj.khem@gmail.com>
+---
+ configs/odroidc2_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configs/odroidc2_defconfig b/configs/odroidc2_defconfig
+index c3cc041040..2f72b8cfba 100644
+--- a/configs/odroidc2_defconfig
++++ b/configs/odroidc2_defconfig
+@@ -8,3 +8,4 @@ CONFIG_CMD_PXE=y
+ CONFIG_CMD_DHCP=y
+ CONFIG_HW_WATCHDOG=y
+ CONFIG_AMLOGIC_WATCHDOG=y
++CONFIG_FS_EXT4=y
+-- 
+2.20.1
+
