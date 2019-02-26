@@ -23,7 +23,6 @@ IMAGE_INSTALL = " \
 
 CORE_IMAGE_BASE_INSTALL += " \
     x11perf \
-    xvideo-tests \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'mesa-demos', '', d)} \
 "
 

@@ -9,7 +9,7 @@ KERNEL_IMAGETYPE ?= "zImage"
 
 PREFERRED_PROVIDER_virtual/bootloader ?= "u-boot"
 PREFERRED_PROVIDER_u-boot ?= "u-boot"
-PREFERRED_VERSION_u-boot ?= "2018.11"
+PREFERRED_VERSION_u-boot ?= "2019.01"
 
 USE_BOOTSRC ?= "1"
 UBOOT_ENV  ?= "boot"
