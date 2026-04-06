@@ -3,7 +3,8 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}-6.18:"
 
 SRC_URI:append = " file://odroid-kmeta;type=kmeta;name=odroid-kmeta;destsuffix=odroid-kmeta"
 
-KERNEL_FEATURES:append:odroid-c2 = "${@bb.utils.contains('MACHINE_FEATURES', 'lima', 'features/drm/drm.scc', '', d)}"
+KERNEL_FEATURES:append:odroid-c2 = "${@bb.utils.contains('MACHINE_FEATURES', 'mali', '', ' features//graphics/fb.scc features/drm/drm.scc', d)}"
+KERNEL_FEATURES:append:odroid-c4 = "${@bb.utils.contains('MACHINE_FEATURES', 'mali', '', ' features//graphics/fb.scc features/drm/drm.scc', d)}"
 
 COMPATIBLE_MACHINE:odroid-c1 = "odroid-c1"
 COMPATIBLE_MACHINE:odroid-c2 = "odroid-c2"
