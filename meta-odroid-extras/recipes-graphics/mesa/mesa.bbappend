@@ -1,3 +1,5 @@
+PACKAGECONFIG:append:meson-gx = " ${@bb.utils.contains('MACHINE_FEATURES', 'mali', '', 'libclc panfrost', d)}"
+
 #Mali userland provides these
 PROVIDES:remove:odroid  = "${@bb.utils.contains('MACHINE_FEATURES', 'mali', 'virtual/libgbm virtual/libgles1 virtual/libgles2 virtual/egl virtual/libegl', '', d)}"
 do_install:append:odroid () {
