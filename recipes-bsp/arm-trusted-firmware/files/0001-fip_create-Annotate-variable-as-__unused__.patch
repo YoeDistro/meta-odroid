@@ -1,0 +1,42 @@
+From bcfeff424a7026355d76b39cc33a91b7a2b14389 Mon Sep 17 00:00:00 2001
+From: Khem Raj <khem.raj@oss.qualcomm.com>
+Date: Tue, 12 May 2026 12:40:38 -0700
+Subject: [PATCH] fip_create: Annotate variable as __unused__
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Newer compilers find this as unused variable and warning-as-error
+breaks the build
+
+| gcc -c -Wall -Werror -pedantic -std=c99 -O2 -I. fip_create.c -o fip_create.o
+| fip_create.c: In function ‘parse_fip’:
+| fip_create.c:469:13: error: variable ‘cnt’ set but not used [-Werror=unused-but-set-variable=]
+|   469 |         int cnt = 0;
+|       |             ^~~
+| cc1: all warnings being treated as errors
+| make: *** [Makefile:61: fip_create.o] Error 1
+
+Therefore add the annotation to silence the warning, this codepath
+is no longer used in latest atf codebase
+
+Upstream-Status: Inappropriate [Old Codebase]
+
+Signed-off-by: Khem Raj <khem.raj@oss.qualcomm.com>
+---
+ tools/fip_create/fip_create.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/fip_create/fip_create.c b/tools/fip_create/fip_create.c
+index f0d079102..d36d41c20 100644
+--- a/tools/fip_create/fip_create.c
++++ b/tools/fip_create/fip_create.c
+@@ -462,7 +462,7 @@ static int parse_fip(const char *fip_filename)
+ 	toc_entry = (fip_toc_entry_t *)(toc_header + 1);
+ 
+ 	/* While the ToC entry is contained into the buffer */
+-	int cnt = 0;
++	int __attribute__((__unused__)) cnt = 0;
+ 	while (((char *)toc_entry + sizeof(fip_toc_entry_t)) < fip_buffer_end) {
+ 		cnt++;
+ 		/* Check if the ToC Entry is the last one */

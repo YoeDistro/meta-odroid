@@ -3,8 +3,10 @@ LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://license.md;md5=829bdeb34c1d9044f393d5a16c068371"
 
 SRCREV = "d0c104e1e1ad0102f0f4c70997b7ee6e6fbbe273"
-SRC_URI = "git://github.com/ARM-software/arm-trusted-firmware.git;branch=master;protocol=https"
-SRC_URI += "file://add_odroid_c2.patch"
+SRC_URI = "git://github.com/ARM-software/arm-trusted-firmware.git;branch=master;protocol=https \
+           file://add_odroid_c2.patch \
+		   file://0001-fip_create-Annotate-variable-as-__unused__.patch \
+		  "
 
 export CROSS_COMPILE = "${TARGET_PREFIX}"
 
