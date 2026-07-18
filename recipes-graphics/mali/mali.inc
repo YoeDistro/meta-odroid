@@ -1,4 +1,4 @@
-LICENSE = "Proprietary"
+LICENSE = "LicenseRef-Proprietary"
 SECTION = "libs"
 
 DEPENDS += "${@bb.utils.contains("DISTRO_FEATURES", "wayland", "virtual/mesa", " ", d)}"
